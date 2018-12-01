@@ -1,0 +1,86 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <meta name="description" content="flight wallet - Pay Bitcoin securely">
+  <script>
+    // from https://stackoverflow.com/questions/247483/http-get-request-in-javascript
+    function httpGetAsync(theUrl, callback) {
+      var xmlHttp = new XMLHttpRequest();
+      xmlHttp.onreadystatechange = function() {
+        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+        callback(xmlHttp.responseText);
+      }
+      xmlHttp.open("GET", theUrl, true); // true for asynchronous
+      xmlHttp.send(null);
+    }
+
+    function parseURLParams(location) {
+      var query = location.search || "?"
+      var params = query.slice(1).split("&").map((str) => str.split("=")).reduce((obj, [key, value]) => ({ [key]: value, ...obj }), {})
+      console.log('params', params)
+      return params
+    }
+
+    function redirectTo(uri) {
+      console.log('redirect to', uri)
+      try {
+        window.location = uri
+      } catch (err) {
+        console.error(err)
+      }
+    }
+
+    function printQR(data) {
+      document.querySelector('#qrcode').innerText = data
+    }
+
+    var blockchainAPI = 'https://test-insight.swap.online/insight-api'
+    var etherscanAPI = 'http://api.etherscan.io/api'
+    var rinkebyAPI = 'http://api-rinkeby.etherscan.io/api'
+    var params = parseURLParams(window.location)
+
+    if (!params.address) {
+      handleError()
+    }
+
+    if (params.chain == 'bitcoin' || !params.chain) {
+      httpGetAsync(blockchainAPI + '/addr/' + params.address + '/utxo', function (utxo) {
+        var dataURI = "flightwallet://update?chain=bitcoin&data=" + utxo
+        printQR(dataURI)
+        redirectTo(dataURI)
+      })
+    } else if (params.chain == 'ethereum') {
+      var apiUrl = etherscanAPI
+      + '?module=proxy&action=eth_getTransactionCount&tag=latest&address='
+      + params.address
+
+      httpGetAsync(apiUrl, function (response) {
+        var nonce = JSON.parse(response).result
+        var dataURI = "flightwallet://update?chain=ethereum&data=" + nonce
+        printQR(dataURI)
+        redirectTo(dataURI)
+      })
+    } else if (params.chain == 'rinkeby') {
+      var apiUrl = rinkebyAPI
+      + '?module=proxy&action=eth_getTransactionCount&tag=latest&address='
+      + params.address
+
+      httpGetAsync(apiUrl, function (response) {
+        var nonce = JSON.parse(response).result
+        var dataURI = "flightwallet://update?chain=ethereum&data=" + nonce
+        printQR(dataURI)
+        redirectTo(dataURI)
+      })
+    }
+  </script>
+</head>
+
+<body>
+  <h1>Sync your wallet</h1>
+
+  <div id="qrcode"></div>
+
+</body>
+
+</html>
