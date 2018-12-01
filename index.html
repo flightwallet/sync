@@ -32,6 +32,7 @@
     }
 
     function printQR(data) {
+      document.querySelector('#link').href = data
       document.querySelector('#qrcode').innerText = data
     }
 
@@ -78,6 +79,8 @@
 
 <body>
   <h1>Sync your wallet</h1>
+
+  <a id="link" href="#">Open in app</a>
 
   <div id="qrcode"></div>
 
